@@ -90,21 +90,11 @@ import logo from '../img/logos/faviconE.png';
         useEffect(() => {
             if (!user) return;
 
-            /*getUserSelections()
+            getUserSelections()
                 .then((data) => {
                     const { selections, changesThisMonth, originalSelections = [] } = data;
                     setUserSelectionsState(selections || []);
-                    setCambiosRestantes(2 - (changesThisMonth || 0));*/
-            getUserSelections().then((data) => {
-            const { selections, changesThisMonth, originalSelections = [] } = data;
-            setUserSelectionsState(selections || []);
-            
-            // Calcular límite basado en si tiene viernes
-            const tieneViernes = (selections || []).some(s => s.day === 'Viernes') || 
-                                (originalSelections || []).some(s => s.day === 'Viernes');
-            const limiteMaximo = tieneViernes ? 3 : 2;
-            
-            setCambiosRestantes(limiteMaximo - (changesThisMonth || 0));
+                    setCambiosRestantes(2 - (changesThisMonth || 0));
 
                     // ADMIN: nunca ve modal ni banner
                     if (user.rol === 'admin') {
@@ -385,14 +375,8 @@ import logo from '../img/logos/faviconE.png';
                     display={user.rol === 'admin' ? 'none' : 'flex'}
                     >
                     {}
-                    {/*<Text fontWeight="bold">
-                        Cambios Mensuales Restantes: {cambiosRestantes} / 2
-                    </Text>*/}
                     <Text fontWeight="bold">
-                        Cambios Mensuales Restantes: {cambiosRestantes} / {
-                            (userSelections || []).some(s => s.day === 'Viernes') ? 3 : 2
-                        }
-                        {(userSelections || []).some(s => s.day === 'Viernes') && ' 🎉'}
+                        Cambios Mensuales Restantes: {cambiosRestantes} / 2
                     </Text>
 
                     <Text
@@ -501,9 +485,9 @@ import logo from '../img/logos/faviconE.png';
                     }}
                     horasDisponiblesPorDia={{
                         Lunes: ['08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-                        Martes: ['07:00', '08:00', '09:00', '10:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
+                        Martes: ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
                         Miércoles: ['08:00', '09:00', '17:00', '18:00', '19:00', '20:00'],
-                        Jueves: ['07:00', '08:00', '09:00', '10:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
+                        Jueves: ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
                         Viernes: ['08:00', '09:00', '10:00', '17:00', '18:00', '19:00']
                     }}
                 />
