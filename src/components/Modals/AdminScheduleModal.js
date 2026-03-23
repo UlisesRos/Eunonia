@@ -1,7 +1,7 @@
 import {
     Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter,
     ModalCloseButton, Box, Flex, Text, Button, IconButton, Heading,
-    VStack, HStack, Wrap, WrapItem, Spinner, useToast, Tabs, TabList,
+    Wrap, WrapItem, Spinner, useToast, Tabs, TabList,
     Tab, TabPanels, TabPanel
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
@@ -133,7 +133,7 @@ const AdminScheduleModal = ({ isOpen, onClose, onScheduleUpdated }) => {
             .then(data => setSchedule(data))
             .catch(() => toast({ title: 'Error al cargar el horario', status: 'error', duration: 3000, isClosable: true }))
             .finally(() => setIsLoading(false));
-    }, [isOpen]);
+    }, [isOpen, toast]);
 
     const handleAdd = async (day, hour) => {
         setActionLoading(`add-${day}-${hour}`);

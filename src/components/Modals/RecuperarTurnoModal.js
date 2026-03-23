@@ -2,7 +2,7 @@
 import {
     Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton,
     ModalBody, ModalFooter, Button, Select, useToast, Box, Text,
-    Badge, VStack, Divider, HStack
+    Badge, Divider, HStack
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { usarTurnoRecuperado } from '../../services/calendarAPI';

@@ -1,7 +1,7 @@
 import {
     Popover, PopoverTrigger, PopoverContent, PopoverArrow, PopoverBody,
-    Box, Heading, Text, Spinner, Flex, Image, Button, Input, Portal,
-    Tooltip, useDisclosure, Badge
+    Box, Heading, Text, Flex, Image, Button, Input, Portal,
+    Tooltip, useDisclosure
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
