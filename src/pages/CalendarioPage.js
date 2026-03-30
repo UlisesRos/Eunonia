@@ -16,6 +16,7 @@ import { getFeriados, getTurnosPorHorario, getUserSelections, marcarFeriado, qui
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '@chakra-ui/react';
 import logo from '../img/logos/faviconE.png';
+import { useCallback } from "react";
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
