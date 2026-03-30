@@ -57,6 +57,42 @@ const CalendarioPage = () => {
     const navigate = useNavigate();
     const toast = useToast();
     
+    const fetchAllTurnos = useCallback(async () => {
+    if (!weekDates || weekDates.length === 0) return;
+
+    try {
+        const [turnosNormales, turnosRecuperados] = await Promise.all([
+            getTurnosPorHorario(),
+            listarTodosLosTurnosRecuperadosUsados(
+                weekDates[0].date,
+                weekDates[weekDates.length - 1].date
+            )
+        ]);
+
+        const turnosCombinados = [...turnosNormales];
+
+        for (let rec of turnosRecuperados) {
+            const existente = turnosCombinados.find(
+                t => t.day === rec.day && t.hour === rec.hour
+            );
+
+            if (existente) {
+                existente.users.push({ nombre: rec.nombre, tipo: rec.tipo });
+            } else {
+                turnosCombinados.push({
+                    day: rec.day,
+                    hour: rec.hour,
+                    users: [{ nombre: rec.nombre, tipo: rec.tipo }]
+                });
+            }
+        }
+
+        setTurnos(turnosCombinados);
+
+    } catch (err) {
+        console.error('Error al cargar turnos combinados:', err);
+    }
+}, [weekDates]);
 
     useEffect(() => {
         getFeriados()
@@ -147,38 +183,8 @@ const CalendarioPage = () => {
     }, [user]);
 
     useEffect(() => {
-        const fetchAllTurnos = async () => {
-        if (!weekDates || weekDates.length === 0) return;
-        try {
-            const [turnosNormales, turnosRecuperados] = await Promise.all([
-                getTurnosPorHorario(),
-                listarTodosLosTurnosRecuperadosUsados(
-                    weekDates[0].date,
-                    weekDates[weekDates.length - 1].date
-                )
-            ]);
-            const turnosCombinados = [...turnosNormales];
-            for (let rec of turnosRecuperados) {
-                const existente = turnosCombinados.find(
-                    t => t.day === rec.day && t.hour === rec.hour
-                );
-                if (existente) {
-                    existente.users.push({ nombre: rec.nombre, tipo: rec.tipo });
-                } else {
-                    turnosCombinados.push({
-                        day: rec.day, hour: rec.hour,
-                        users: [{ nombre: rec.nombre, tipo: rec.tipo }]
-                    });
-                }
-            }
-            setTurnos(turnosCombinados);
-        } catch (err) {
-            console.error('Error al cargar turnos combinados:', err);
-        }
-    };
-        
         fetchAllTurnos();
-    }, [weekDates]);
+    }, [weekDates, fetchAllTurnos]);
 
     const estaBloqueadoPorPago = (user) => {
         const hoy = new Date();
