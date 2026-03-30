@@ -252,7 +252,7 @@ export default function SelectDaysModal({
                             {selections.map((s, i) => (
                                 <HStack
                                     key={i}
-                                    bg="teal.50"
+                                    bg="green.100"
                                     border="1px solid"
                                     borderColor="teal.200"
                                     borderRadius="md"
@@ -264,11 +264,12 @@ export default function SelectDaysModal({
                                         <Badge colorScheme="teal" variant="solid" borderRadius="full" w={5} h={5} display="flex" alignItems="center" justifyContent="center" fontSize="xs">
                                             {i + 1}
                                         </Badge>
-                                        <Text fontWeight="semibold" fontSize="sm">
+                                        <Text fontWeight="semibold" fontSize="sm" color='teal.700'>
                                             {s.day} — {s.hour} hs
                                         </Text>
                                     </HStack>
                                     <Button
+                                        color='red.700'
                                         size="xs"
                                         colorScheme="red"
                                         variant="ghost"
