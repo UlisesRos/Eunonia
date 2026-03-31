@@ -42,6 +42,7 @@ const CalendarioPage = () => {
     const [showInfoModal, setShowInfoModal] = useState(false);
     const [mostrarBannerAjusteOriginal, setMostrarBannerAjusteOriginal] = useState(false);
     const [esPrimerIngreso, setEsPrimerIngreso] = useState(false);
+    const [originalSelectionsState, setOriginalSelectionsState] = useState([]);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
     const [schedule, setSchedule] = useState({});
     const [closedSlots, setClosedSlots] = useState([]);
@@ -59,41 +60,41 @@ const CalendarioPage = () => {
     const toast = useToast();
     
     const fetchAllTurnos = useCallback(async () => {
-    if (!weekDates || weekDates.length === 0) return;
+        if (!weekDates || weekDates.length === 0) return;
 
-    try {
-        const [turnosNormales, turnosRecuperados] = await Promise.all([
-            getTurnosPorHorario(),
-            listarTodosLosTurnosRecuperadosUsados(
-                weekDates[0].date,
-                weekDates[weekDates.length - 1].date
-            )
-        ]);
+        try {
+            const [turnosNormales, turnosRecuperados] = await Promise.all([
+                getTurnosPorHorario(),
+                listarTodosLosTurnosRecuperadosUsados(
+                    weekDates[0].date,
+                    weekDates[weekDates.length - 1].date
+                )
+            ]);
 
-        const turnosCombinados = [...turnosNormales];
+            const turnosCombinados = [...turnosNormales];
 
-        for (let rec of turnosRecuperados) {
-            const existente = turnosCombinados.find(
-                t => t.day === rec.day && t.hour === rec.hour
-            );
+            for (let rec of turnosRecuperados) {
+                const existente = turnosCombinados.find(
+                    t => t.day === rec.day && t.hour === rec.hour
+                );
 
-            if (existente) {
-                existente.users.push({ nombre: rec.nombre, tipo: rec.tipo });
-            } else {
-                turnosCombinados.push({
-                    day: rec.day,
-                    hour: rec.hour,
-                    users: [{ nombre: rec.nombre, tipo: rec.tipo }]
-                });
+                if (existente) {
+                    existente.users.push({ nombre: rec.nombre, tipo: rec.tipo });
+                } else {
+                    turnosCombinados.push({
+                        day: rec.day,
+                        hour: rec.hour,
+                        users: [{ nombre: rec.nombre, tipo: rec.tipo }]
+                    });
+                }
             }
+
+            setTurnos(turnosCombinados);
+
+        } catch (err) {
+            console.error('Error al cargar turnos combinados:', err);
         }
-
-        setTurnos(turnosCombinados);
-
-    } catch (err) {
-        console.error('Error al cargar turnos combinados:', err);
-    }
-}, [weekDates]);
+    }, [weekDates]);
 
     useEffect(() => {
         getFeriados()
@@ -151,6 +152,7 @@ const CalendarioPage = () => {
             .then((data) => {
                 const { selections, changesThisMonth, originalSelections = [] } = data;
                 setUserSelectionsState(selections || []);
+                setOriginalSelectionsState(originalSelections);
                 setCambiosRestantes(2 - (changesThisMonth || 0));
 
                 if (user.rol === 'admin') {
@@ -561,15 +563,20 @@ const CalendarioPage = () => {
                 isOpen={showSelectModal}
                 onClose={() => setShowSelectModal(false)}
                 diasSemanales={user?.diasSemanales || 1}
-                existingSelections={userSelections}
+                existingSelections={mostrarBannerAjusteOriginal ? originalSelectionsState : userSelections}
                 cambiosRestantes={cambiosRestantes}
                 turnosOcupados={turnos}
                 modoOriginal={mostrarBannerAjusteOriginal}
                 esPrimerIngreso={esPrimerIngreso}
                 onUpdate={() => {
                     getUserSelections().then((data) => {
-                        setUserSelectionsState(data.selections || []);
-                        setCambiosRestantes(2 - (data.changesThisMonth || 0));
+                        const { selections, changesThisMonth, originalSelections = [] } = data;
+                        setUserSelectionsState(selections || []);
+                        setOriginalSelectionsState(originalSelections);
+                        setCambiosRestantes(2 - (changesThisMonth || 0));
+                        // Re-evaluar banner después de guardar
+                        const coincide = originalSelections.length === user.diasSemanales;
+                        setMostrarBannerAjusteOriginal(!coincide && originalSelections.length > 0);
                     });
                     fetchAllTurnos();
                 }}
