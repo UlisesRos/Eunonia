@@ -1,9 +1,9 @@
 import { Button, Box, Heading, Text, Flex, Image, HStack, Tag, Input, InputGroup, InputLeftElement } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCurrentWeekDates } from '../utils/calendarUtils';
+import { getCurrentWeekDates, toLocalISODate } from '../utils/calendarUtils';
 import CalendarGrid from '../components/Calendar/CalendarGrid';
 import EditSingleTurnModal from '../components/Modals/EditSingleTurnModal';
 import AdminEditTurnModal from '../components/Modals/AdminEditTurnModal';
@@ -31,7 +31,7 @@ const CalendarioPage = () => {
 
     const [isLoading, setIsLoading] = useState(true);
     const [userSelections, setUserSelectionsState] = useState([]);
-    const [cambiosRestantes, setCambiosRestantes] = useState(2);
+    const [cambiosRestantes, setCambiosRestantes] = useState(4);
     const [showEditModal, setShowEditModal] = useState(false);
     const [horarioActual, setHorarioActual] = useState(null);
     const [showAdminModal, setShowAdminModal] = useState(false);
@@ -53,7 +53,22 @@ const CalendarioPage = () => {
     const [showSelectModal, setShowSelectModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const weekDates = useMemo(() => getCurrentWeekDates(), []);
+    const [weekDates, setWeekDates] = useState(() => getCurrentWeekDates());
+
+    // Recalcula weekDates cada minuto para detectar cambio de semana sin recargar
+    useEffect(() => {
+        const check = () => {
+            setWeekDates(prev => {
+                const next = getCurrentWeekDates();
+                if (!prev[0] || toLocalISODate(prev[0].date) !== toLocalISODate(next[0].date)) {
+                    return next;
+                }
+                return prev;
+            });
+        };
+        const id = setInterval(check, 60000);
+        return () => clearInterval(id);
+    }, []);
 
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -66,8 +81,8 @@ const CalendarioPage = () => {
             const [turnosNormales, turnosRecuperados] = await Promise.all([
                 getTurnosPorHorario(),
                 listarTodosLosTurnosRecuperadosUsados(
-                    weekDates[0].date,
-                    weekDates[weekDates.length - 1].date
+                    toLocalISODate(weekDates[0].date),
+                    toLocalISODate(weekDates[weekDates.length - 1].date)
                 )
             ]);
 
@@ -120,8 +135,8 @@ const CalendarioPage = () => {
     // Cargar closed slots para la semana actual
     useEffect(() => {
         if (!weekDates || weekDates.length === 0) return;
-        const startDate = weekDates[0].date;
-        const endDate = weekDates[weekDates.length - 1].date;
+        const startDate = toLocalISODate(weekDates[0].date);
+        const endDate = toLocalISODate(weekDates[weekDates.length - 1].date);
         getClosedSlots(startDate, endDate)
             .then(setClosedSlots)
             .catch(() => setClosedSlots([]));
@@ -153,7 +168,7 @@ const CalendarioPage = () => {
                 const { selections, changesThisMonth, originalSelections = [] } = data;
                 setUserSelectionsState(selections || []);
                 setOriginalSelectionsState(originalSelections);
-                setCambiosRestantes(2 - (changesThisMonth || 0));
+                setCambiosRestantes(4 - (changesThisMonth || 0));
 
                 if (user.rol === 'admin') {
                     setShowSelectModal(false);
@@ -196,14 +211,13 @@ const CalendarioPage = () => {
     };
 
     const handleToggleClosed = async (dayName, hora) => {
-        // Obtener la fecha ISO del día clickeado
         const weekDay = weekDates.find(w => w.dayName === dayName);
         if (!weekDay) return;
-        const fechaISO = new Date(weekDay.date).toISOString().slice(0, 10);
-        const yaEstaСerrado = closedSlots.some(cs => cs.date === fechaISO && cs.hour === hora);
+        const fechaISO = toLocalISODate(weekDay.date);
+        const yaEstaCerrado = closedSlots.some(cs => cs.date === fechaISO && cs.hour === hora);
 
         try {
-            if (yaEstaСerrado) {
+            if (yaEstaCerrado) {
                 await abrirHorario(fechaISO, hora);
                 setClosedSlots(prev => prev.filter(cs => !(cs.date === fechaISO && cs.hour === hora)));
                 toast({ title: `${hora} reabierto`, status: 'info', duration: 2000, isClosable: true });
@@ -212,6 +226,7 @@ const CalendarioPage = () => {
                 setClosedSlots(prev => [...prev, { date: fechaISO, hour: hora }]);
                 toast({ title: `${hora} cerrado para ese día`, status: 'warning', duration: 2000, isClosable: true });
             }
+            await fetchAllTurnos();
         } catch (err) {
             toast({ title: 'Error', description: err.response?.data?.message || 'No se pudo actualizar.', status: 'error', duration: 3000, isClosable: true });
         }
@@ -233,6 +248,8 @@ const CalendarioPage = () => {
             await marcarFeriado(fechaISO);
             toast({ title: 'Feriado marcado', description: `El día ${fechaISO} fue marcado como feriado.`, status: 'success', duration: 3000, isClosable: true });
             getFeriados().then(setFeriados);
+            listarTurnosRecuperables().then(setTurnosRecuperables);
+            fetchAllTurnos();
         } catch (error) {
             toast({ title: 'Error', description: error.response?.data?.message || 'No se pudo marcar el feriado.', status: 'error', duration: 3000, isClosable: true });
         }
@@ -243,6 +260,8 @@ const CalendarioPage = () => {
             await quitarFeriado(fechaISO);
             toast({ title: 'Feriado quitado', description: `Se quitó el feriado del día ${fechaISO}.`, status: 'info', duration: 3000, isClosable: true });
             getFeriados().then(setFeriados);
+            listarTurnosRecuperables().then(setTurnosRecuperables);
+            fetchAllTurnos();
         } catch (error) {
             toast({ title: 'Error', description: error.response?.data?.message || 'No se pudo quitar el feriado.', status: 'error', duration: 3000, isClosable: true });
         }
@@ -439,7 +458,7 @@ const CalendarioPage = () => {
                             <Text fontFamily="'Questrial', sans-serif" fontSize="sm" color="brand.secondary">
                                 Cambios mensuales:{' '}
                                 <Box as="span" fontWeight="bold" color={cambiosRestantes === 0 ? 'red.300' : 'brand.secondary'}>
-                                    {cambiosRestantes} / 2
+                                    {cambiosRestantes} / 4
                                 </Box>
                             </Text>
                         </Box>
@@ -568,12 +587,13 @@ const CalendarioPage = () => {
                 turnosOcupados={turnos}
                 modoOriginal={mostrarBannerAjusteOriginal}
                 esPrimerIngreso={esPrimerIngreso}
+                schedule={schedule}
                 onUpdate={() => {
                     getUserSelections().then((data) => {
                         const { selections, changesThisMonth, originalSelections = [] } = data;
                         setUserSelectionsState(selections || []);
                         setOriginalSelectionsState(originalSelections);
-                        setCambiosRestantes(2 - (changesThisMonth || 0));
+                        setCambiosRestantes(4 - (changesThisMonth || 0));
                         // Re-evaluar banner después de guardar
                         const coincide = originalSelections.length === user.diasSemanales;
                         setMostrarBannerAjusteOriginal(!coincide && originalSelections.length > 0);
@@ -591,10 +611,11 @@ const CalendarioPage = () => {
                 horarioActual={horarioActual}
                 feriados={feriados}
                 weekDates={weekDates}
+                schedule={schedule}
                 onUpdate={() => {
                     getUserSelections().then(data => {
                         setUserSelectionsState(data.selections || []);
-                        setCambiosRestantes(2 - (data.changesThisMonth || 0));
+                        setCambiosRestantes(4 - (data.changesThisMonth || 0));
                     });
                     fetchAllTurnos();
                 }}
@@ -606,11 +627,12 @@ const CalendarioPage = () => {
                 selectedUser={selectedUsuario}
                 horarioActual={horarioActual}
                 turnosOcupados={turnos}
+                schedule={schedule}
                 onUpdate={() => {
                     fetchAllTurnos();
                     getUserSelections().then(data => {
                         setUserSelectionsState(data.selections || []);
-                        setCambiosRestantes(2 - (data.changesThisMonth || 0));
+                        setCambiosRestantes(4 - (data.changesThisMonth || 0));
                     });
                 }}
             />
@@ -626,16 +648,15 @@ const CalendarioPage = () => {
                     listarTurnosRecuperables().then(setTurnosRecuperables);
                     getUserSelections().then(data => {
                         setUserSelectionsState(data.selections || []);
-                        setCambiosRestantes(2 - (data.changesThisMonth || 0));
+                        setCambiosRestantes(4 - (data.changesThisMonth || 0));
                     });
                 }}
-                horasDisponiblesPorDia={{
-                    Lunes: ['08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-                    Martes: ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-                    Miércoles: ['08:00', '09:00', '17:00', '18:00', '19:00', '20:00'],
-                    Jueves: ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-                    Viernes: ['08:00', '09:00', '17:00', '18:00', '19:00']
-                }}
+                horasDisponiblesPorDia={
+                    ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].reduce((acc, dia) => {
+                        acc[dia] = schedule[dia.toLowerCase()] || [];
+                        return acc;
+                    }, {})
+                }
             />
 
             {user?.rol === 'usuario' && <InfoModal />}
@@ -651,6 +672,7 @@ const CalendarioPage = () => {
                 onClose={() => setShowScheduleModal(false)}
                 onScheduleUpdated={() => {
                     getSchedule().then(setSchedule);
+                    fetchAllTurnos();
                 }}
             />
 

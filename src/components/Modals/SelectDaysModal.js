@@ -8,13 +8,6 @@ import { CheckIcon, DeleteIcon } from '@chakra-ui/icons';
 import { setUserSelections, setOriginalSelections } from '../../services/calendarAPI';
 
 const diasDisponibles = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-const horasDisponibles = {
-    'Lunes': ['08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Martes': ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Miércoles': ['08:00', '09:00', '17:00', '18:00', '19:00', '20:00'],
-    'Jueves': ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Viernes': ['08:00', '09:00', '17:00', '18:00', '19:00']
-};
 
 export default function SelectDaysModal({
     isOpen,
@@ -24,6 +17,7 @@ export default function SelectDaysModal({
     turnosOcupados = [],
     modoOriginal = false,
     esPrimerIngreso = false,
+    schedule = {},
     onUpdate
 }) {
     const toast = useToast();
@@ -38,7 +32,9 @@ export default function SelectDaysModal({
             setSelectedDay('');
             setSelectedHour('');
         }
-    }, [isOpen, existingSelections]);
+    // Solo al abrir/cerrar — evita resetear mientras el usuario está seleccionando
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
 
     const turnosLlenos = new Set(
         turnosOcupados
@@ -214,7 +210,7 @@ export default function SelectDaysModal({
                                 mb={2}
                                 size="sm"
                             >
-                                {(horasDisponibles[selectedDay] || []).map(h => {
+                                {(schedule[selectedDay.toLowerCase()] || []).map(h => {
                                     const lleno = turnosLlenos.has(`${selectedDay}-${h}`);
                                     return (
                                         <option key={h} value={h} disabled={lleno}>

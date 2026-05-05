@@ -9,13 +9,6 @@ import backendUrl from '../../config';
 const API_URL = `${backendUrl}/api/calendar`;
 
 const diasDisponibles = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-const horasDisponibles = {
-    'Lunes': ['08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Martes': ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Miércoles': ['08:00', '09:00', '17:00', '18:00', '19:00', '20:00'],
-    'Jueves': ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Viernes': ['08:00', '09:00', '17:00', '18:00', '19:00']
-};
 
 export default function AdminEditTurnModal({
     isOpen,
@@ -24,6 +17,7 @@ export default function AdminEditTurnModal({
     horarioActual,
     onUpdate,
     turnosOcupados = [],
+    schedule = {},
 }) {
     const toast = useToast();
     const [selectedDay, setSelectedDay] = useState('');
@@ -210,7 +204,7 @@ const handleResetToOriginals = async () => {
     }
 };
 
-    const horasFiltradas = selectedDay ? horasDisponibles[selectedDay] : [];
+    const horasFiltradas = selectedDay ? (schedule[selectedDay.toLowerCase()] || []) : [];
 
     const turnosLlenos = new Set(
         turnosOcupados
@@ -231,12 +225,13 @@ const handleResetToOriginals = async () => {
                             <Text mb={4}><strong>Turno actual:</strong> {horarioActual?.day} {horarioActual?.hour}</Text>
                         </ModalBody>
                         <ModalFooter display='flex' flexWrap='wrap' justifyContent='center' alignItems='center' gap={3} w='100%'>
-                            <Button onClick={onClose}>Cancelar</Button>
+                            <Button onClick={onClose} isDisabled={loading}>Cancelar</Button>
                             <Button
                                 colorScheme="red"
                                 variant="outline"
                                 onClick={handleEliminarTurnoRecuperado}
                                 isLoading={loading}
+                                isDisabled={loading}
                                 >
                                     {loading ? <Spinner size="sm" /> : 'Cancelar Turno Recuperado'}
                             </Button>
@@ -277,8 +272,8 @@ const handleResetToOriginals = async () => {
                             )}
                         </ModalBody>
                         <ModalFooter display='flex' flexWrap='wrap' justifyContent='center' alignItems='center' gap={3} w='100%'>
-                            <Button onClick={onClose}>Cancelar</Button>
-                            <Button colorScheme="teal" onClick={handleSave} isLoading={loading}>
+                            <Button onClick={onClose} isDisabled={loading}>Cancelar</Button>
+                            <Button colorScheme="teal" onClick={handleSave} isLoading={loading} isDisabled={loading}>
                                 {loading ? <Spinner size="sm" /> : 'Guardar cambio'}
                             </Button>
                             <Button
@@ -286,6 +281,7 @@ const handleResetToOriginals = async () => {
                                 variant="outline"
                                 onClick={handleAdminCancelarTurno}
                                 isLoading={loading}
+                                isDisabled={loading}
                                 >
                                     {loading ? <Spinner size="sm" /> : 'Cancelar Turno'}
                             </Button>
@@ -294,6 +290,7 @@ const handleResetToOriginals = async () => {
                                 variant="outline"
                                 onClick={handleResetToOriginals}
                                 isLoading={loading}
+                                isDisabled={loading}
                                 >
                                     {loading ? <Spinner size="sm" /> : 'Restaurar a originales'}
                                 </Button>

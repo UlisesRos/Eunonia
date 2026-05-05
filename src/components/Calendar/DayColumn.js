@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 import TimeSlot from './TimeSlot';
 import { horariosPorDia } from '../../utils/horarios';
 import { useAuth } from '../../context/AuthContext';
+import { toLocalISODate } from '../../utils/calendarUtils';
 
 const MotionBox = motion(Box);
 
 const DayColumn = ({ dayName, date, turnos, onNombreClick, feriados = [], onMarcarFeriado, onQuitarFeriado, searchQuery = '', schedule = {}, closedSlots = [], onToggleClosed }) => {
     const horarios = (schedule[dayName.toLowerCase()] || horariosPorDia[dayName.toLowerCase()] || []);
 
-    const fechaISO = new Date(date).toISOString().slice(0, 10);
+    const fechaISO = toLocalISODate(date);
     const esFeriado = feriados.some(f => f.date === fechaISO);
 
     const fechaObj = new Date(date);

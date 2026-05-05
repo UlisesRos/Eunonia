@@ -7,15 +7,9 @@ import {
 import { useState, useEffect } from 'react';
 import { setUserSelections, resetUserSelections, cancelarTurnoTemporalmente, guardarTurnoParaRecuperar, usuarioEliminarTurnoRecuperado } from '../../services/calendarAPI';
 import { useAuth } from '../../context/AuthContext';
+import { toLocalISODate } from '../../utils/calendarUtils';
 
 const diasDisponibles = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-const horasDisponibles = {
-    'Lunes': ['08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Martes': ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Miércoles': ['08:00', '09:00', '17:00', '18:00', '19:00', '20:00'],
-    'Jueves': ['07:00', '08:00', '09:00', '10:00', '17:00', '18:00', '19:00', '20:00'],
-    'Viernes': ['08:00', '09:00', '17:00', '18:00', '19:00']
-};
 
 export default function EditSingleTurnModal({
     isOpen,
@@ -26,6 +20,7 @@ export default function EditSingleTurnModal({
     horarioActual,
     feriados = [],
     weekDates = [],
+    schedule = {},
     onUpdate
 }) {
     const toast = useToast();
@@ -51,7 +46,7 @@ export default function EditSingleTurnModal({
     const diasBloqueados = new Set();
 
     weekDates?.forEach(({ dayName, date }) => {
-        const iso = new Date(date).toISOString().slice(0, 10);
+        const iso = toLocalISODate(date);
         if (diasFeriadosISO.includes(iso)) {
             diasBloqueados.add(dayName);
         }
@@ -63,7 +58,7 @@ export default function EditSingleTurnModal({
             .map(t => `${t.day}-${t.hour}`)
     );
 
-    const horasFiltradas = selectedDay ? horasDisponibles[selectedDay] : [];
+    const horasFiltradas = selectedDay ? (schedule[selectedDay.toLowerCase()] || []) : [];
 
     const handleSave = async () => {
         if (!selectedDay || !selectedHour) {
@@ -258,6 +253,7 @@ export default function EditSingleTurnModal({
                             variant="outline"
                             onClick={handleEliminarTurnoRecuperado}
                             isLoading={loading}
+                            isDisabled={loading}
                         >
                             Eliminar y volver a pendiente
                         </Button>
@@ -292,6 +288,7 @@ export default function EditSingleTurnModal({
                             colorScheme="red"
                             onClick={handleCancelarCambioTemporal}
                             isLoading={loading}
+                            isDisabled={loading}
                         >
                             Volver a mis horarios originales
                         </Button>
@@ -328,13 +325,13 @@ export default function EditSingleTurnModal({
                     ) : sinCambios ? (
                         <Box bg="orange.50" border="1px solid" borderColor="orange.300" borderRadius="md" p={3}>
                             <Text color="orange.700" fontSize="sm" textAlign="center">
-                                Llegaste al límite de 2 cambios este mes. Igual podés cancelar sin recuperar o guardar para recuperar.
+                                Llegaste al límite de 4 cambios este mes. Igual podés cancelar sin recuperar o guardar para recuperar.
                             </Text>
                         </Box>
                     ) : (
                         <>
                             <Text fontSize="sm" fontWeight="normal" mb={2} color="gray.600">
-                                Cambios restantes este mes: <strong>{cambiosRestantes}/2</strong>
+                                Cambios restantes este mes: <strong>{cambiosRestantes}/4</strong>
                             </Text>
                             <Divider mb={3} />
 
@@ -414,7 +411,7 @@ export default function EditSingleTurnModal({
                                 colorScheme="teal"
                                 onClick={handleSave}
                                 isLoading={loading}
-                                isDisabled={!selectedDay || !selectedHour}
+                                isDisabled={loading || !selectedDay || !selectedHour}
                                 size="sm"
                             >
                                 Confirmar cambio de turno
@@ -428,6 +425,7 @@ export default function EditSingleTurnModal({
                                     variant="outline"
                                     onClick={handleCancelarYGuardar}
                                     isLoading={loading}
+                                    isDisabled={loading}
                                     size="sm"
                                 >
                                     Guardar para recuperar
@@ -437,6 +435,7 @@ export default function EditSingleTurnModal({
                                     variant="outline"
                                     onClick={handleCancelarSinRecuperar}
                                     isLoading={loading}
+                                    isDisabled={loading}
                                     size="sm"
                                 >
                                     Cancelar sin recuperar
