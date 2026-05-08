@@ -6,6 +6,7 @@ import {
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import backendUrl from '../../config';
+import { useAuth } from '../../context/AuthContext';
 
 const ModalEditarUsuario = ({ isOpen, onClose, user, onUsuarioActualizado }) => {
     const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ const ModalEditarUsuario = ({ isOpen, onClose, user, onUsuarioActualizado }) => 
     });
 
     const toast = useToast();
+    const { token } = useAuth();
 
     useEffect(() => {
         if (user) {
@@ -37,7 +39,11 @@ const ModalEditarUsuario = ({ isOpen, onClose, user, onUsuarioActualizado }) => 
 
     const handleUpdate = async () => {
         try {
-            await axios.put(`${backendUrl}/api/usuarios/edit/${user._id}`, formData);
+            await axios.put(
+                `${backendUrl}/api/usuarios/edit/${user._id}`,
+                formData,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
             toast({
                 title: 'Usuario actualizado',
                 status: 'success',

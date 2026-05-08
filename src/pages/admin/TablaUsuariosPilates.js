@@ -12,6 +12,7 @@ import axios from 'axios';
 import pagado from '../../img/pagado.png';
 import noPagado from '../../img/nopago.png';
 import backendUrl from '../../config';
+import { useAuth } from '../../context/AuthContext';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -23,6 +24,7 @@ const TablaUsuariosPilates = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [busqueda, setBusqueda] = useState('');
     const [filtroPago, setFiltroPago] = useState('todos');
+    const { token } = useAuth();
 
     const navigate = useNavigate();
 
@@ -44,7 +46,9 @@ const TablaUsuariosPilates = () => {
         // eslint-disable-next-line no-restricted-globals
         if (confirm('¿Estás seguro que deseas eliminar este usuario?')) {
             try {
-                await axios.delete(`${backendUrl}/api/usuarios/delete/${id}`);
+                await axios.delete(`${backendUrl}/api/usuarios/delete/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
                 setUsuarios((prev) => prev.filter((u) => u._id !== id));
             } catch (err) {
                 console.error('Error al eliminar usuario:', err);
@@ -66,9 +70,11 @@ const TablaUsuariosPilates = () => {
 
     const handleTogglePago = async (userId, currentPago) => {
         try {
-            const res = await axios.patch(`${backendUrl}/api/usuarios/updatePago/${userId}`, {
-                pago: !currentPago,
-            });
+            const res = await axios.patch(
+                `${backendUrl}/api/usuarios/updatePago/${userId}`,
+                { pago: !currentPago },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
             setUsuarios((prev) =>
                 prev.map((u) => (u._id === userId ? res.data : u))
             );
