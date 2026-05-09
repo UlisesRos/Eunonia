@@ -6,6 +6,7 @@ import {
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { usarTurnoRecuperado } from '../../services/calendarAPI';
+import { toLocalISODate } from '../../utils/calendarUtils';
 
 export default function RecuperarTurnoModal({
     isOpen,
@@ -14,7 +15,8 @@ export default function RecuperarTurnoModal({
     turnosOcupados = [],
     onUpdate,
     horasDisponiblesPorDia,
-    nombreUsuario
+    nombreUsuario,
+    weekDates = []
 }) {
     const toast = useToast();
     const [selectedTurnId, setSelectedTurnId] = useState('');
@@ -79,7 +81,9 @@ export default function RecuperarTurnoModal({
 
         setLoading(true);
         try {
-            await usarTurnoRecuperado(selectedTurnId, selectedDay, selectedHour);
+            const weekDay = weekDates.find(w => w.dayName === selectedDay);
+            const recoveryDate = weekDay ? toLocalISODate(weekDay.date) : null;
+            await usarTurnoRecuperado(selectedTurnId, selectedDay, selectedHour, recoveryDate);
             toast({
                 title: 'Turno recuperado',
                 description: `Quedaste anotado/a el ${selectedDay} a las ${selectedHour} hs.`,
@@ -110,15 +114,15 @@ export default function RecuperarTurnoModal({
                 <ModalCloseButton />
                 <ModalBody>
                     {/* Info sobre turnos pendientes */}
-                    <Box bg="blue.50" border="1px solid" borderColor="blue.200" borderRadius="md" p={3} mb={4}>
-                        <Text fontSize="sm" color="blue.800" textAlign="center">
+                    <Box bg="rgba(106, 134, 119, 0.1)" border="1px solid" borderColor="brand.muted" borderRadius="md" p={3} mb={4}>
+                        <Text fontSize="sm" color="brand.dark" textAlign="center">
                             Tenés <strong>{turnosRecuperables.length}</strong> turno{turnosRecuperables.length !== 1 ? 's' : ''} pendiente{turnosRecuperables.length !== 1 ? 's' : ''}.
                             Elegí cuál usar y en qué horario lo querés tomar esta semana.
                         </Text>
                     </Box>
 
                     {/* Paso 1: Elegir turno pendiente */}
-                    <Text fontWeight="bold" fontSize="sm" mb={1}>
+                    <Text fontWeight="bold" fontSize="sm" mb={1} color="brand.dark">
                         Paso 1: Elegí el turno que querés usar
                     </Text>
                     <Select
@@ -140,16 +144,16 @@ export default function RecuperarTurnoModal({
 
                     {/* Detalles del turno seleccionado */}
                     {turnoSeleccionado && (
-                        <Box bg="gray.50" borderRadius="md" p={2} mb={4}>
+                        <Box bg="brand.cream" border="1px solid" borderColor="brand.muted" borderRadius="md" p={2} mb={4}>
                             <HStack spacing={2} flexWrap="wrap">
-                                <Badge colorScheme="blue" fontSize="xs">Turno original</Badge>
-                                <Text fontSize="xs" color="gray.600">
+                                <Badge colorScheme="green" fontSize="xs">Turno original</Badge>
+                                <Text fontSize="xs" color="brand.dark">
                                     {turnoSeleccionado.originalDay} — {turnoSeleccionado.originalHour} hs
                                 </Text>
                                 {turnoSeleccionado.cancelDate && (
                                     <>
                                         <Badge colorScheme="orange" fontSize="xs">Cancelado</Badge>
-                                        <Text fontSize="xs" color="gray.600">
+                                        <Text fontSize="xs" color="brand.dark">
                                             semana del {formatearFecha(turnoSeleccionado.cancelDate)}
                                         </Text>
                                     </>
@@ -161,7 +165,7 @@ export default function RecuperarTurnoModal({
                     <Divider mb={4} />
 
                     {/* Paso 2: Elegir nuevo horario */}
-                    <Text fontWeight="bold" fontSize="sm" mb={1}>
+                    <Text fontWeight="bold" fontSize="sm" mb={1} color="brand.dark">
                         Paso 2: Elegí cuándo querés tomarlo esta semana
                     </Text>
                     <Select
@@ -201,8 +205,8 @@ export default function RecuperarTurnoModal({
 
                     {/* Resumen de la selección */}
                     {selectedTurnId && selectedDay && selectedHour && (
-                        <Box bg="teal.50" border="1px solid" borderColor="teal.300" borderRadius="md" p={3} mt={4}>
-                            <Text fontSize="sm" color="teal.800" textAlign="center">
+                        <Box bg="rgba(106, 134, 119, 0.12)" border="1px solid" borderColor="brand.primary" borderRadius="md" p={3} mt={4}>
+                            <Text fontSize="sm" color="brand.dark" textAlign="center" fontWeight="500">
                                 Vas a recuperar el turno el <strong>{selectedDay}</strong> a las <strong>{selectedHour} hs</strong>
                             </Text>
                         </Box>

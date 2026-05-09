@@ -60,8 +60,8 @@ export const listarTurnosRecuperables = async () => {
     return res.data;
 };
 
-export const usarTurnoRecuperado = async (turnId, day, hour) => {
-    const res = await axios.post(`${API_URL}/usar-turno-recuperado`, { turnId, day, hour }, getAuthHeaders());
+export const usarTurnoRecuperado = async (turnId, day, hour, date) => {
+    const res = await axios.post(`${API_URL}/usar-turno-recuperado`, { turnId, day, hour, date }, getAuthHeaders());
     return res.data;
 };
 

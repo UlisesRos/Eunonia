@@ -618,6 +618,7 @@ const CalendarioPage = () => {
                         setCambiosRestantes(4 - (data.changesThisMonth || 0));
                     });
                     fetchAllTurnos();
+                    listarTurnosRecuperables().then(setTurnosRecuperables);
                 }}
             />
 
@@ -643,6 +644,7 @@ const CalendarioPage = () => {
                 turnosRecuperables={turnosRecuperables}
                 turnosOcupados={turnos}
                 nombreUsuario={`${user?.nombre} ${user?.apellido}`}
+                weekDates={weekDates}
                 onUpdate={() => {
                     fetchAllTurnos();
                     listarTurnosRecuperables().then(setTurnosRecuperables);
