@@ -5,6 +5,7 @@ import {
 import { useState } from 'react';
 import axios from 'axios';
 import backendUrl from '../../config';
+import { useAuth } from '../../context/AuthContext';
 
 const API_URL = `${backendUrl}/api/info`;
 
@@ -14,6 +15,7 @@ const AdminInfoModal = ({ isOpen, onClose, onSuccess }) => {
     const [link, setLink] = useState('');
     const [loading, setLoading] = useState(false);
     const toast = useToast();
+    const { token } = useAuth();
 
     const handleSubmit = async () => {
         if (!title || !description) {
@@ -29,7 +31,7 @@ const AdminInfoModal = ({ isOpen, onClose, onSuccess }) => {
 
         setLoading(true);
         try {
-            await axios.post(`${API_URL}/info-modal`, { title, description, link });
+            await axios.post(`${API_URL}/info-modal`, { title, description, link }, { headers: { Authorization: `Bearer ${token}` } });
             toast({
                 title: 'Novedad publicada',
                 description: 'La información fue guardada correctamente.',
@@ -61,7 +63,7 @@ const AdminInfoModal = ({ isOpen, onClose, onSuccess }) => {
 
         setLoading(true);
         try {
-            await axios.post(`${API_URL}/info-modal/clear`);
+            await axios.post(`${API_URL}/info-modal/clear`, {}, { headers: { Authorization: `Bearer ${token}` } });
             toast({
                 title: 'Novedades eliminadas',
                 description: 'Ya no se mostrará ninguna novedad a los usuarios.',
